@@ -1,0 +1,15 @@
+Candlestick Patterns
+
+A Bullish Engulfing pattern forms when a large bullish candle completely engulfs the previous bearish candle.
+
+Risk Management
+
+Never risk more than 1% of account equity per trade. Always use a stop loss. Risk reward should be at least 1:2.
+
+Trend Following Strategy
+
+Trade only in the direction of the higher-timeframe trend. Avoid trading during low volatility.
+
+Bear Flag Pattern
+
+A Bear Flag is a continuation chart pattern. Price forms a downward impulse and then a small upward channel.
