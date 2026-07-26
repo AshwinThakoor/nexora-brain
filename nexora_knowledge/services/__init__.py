@@ -1,8 +1,8 @@
 import re
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
-from .models import KnowledgeChunk, KnowledgeDocument
-from .schemas import SearchResult
+from ..models import KnowledgeChunk, KnowledgeDocument
+from ..schemas import SearchResult
 
 def _tokens(query: str) -> list[str]:
     return [t.lower() for t in re.findall(r"[A-Za-z0-9_'-]+", query) if len(t) >= 2]

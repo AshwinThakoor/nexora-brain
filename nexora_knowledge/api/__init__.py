@@ -1,9 +1,9 @@
 from fastapi import Depends, FastAPI, HTTPException, Query
 from sqlalchemy.orm import Session
-from .database import SessionLocal, init_database
-from .ingest import ingest_document
-from .schemas import IngestRequest, SearchResult
-from .services import knowledge_stats, search_knowledge
+from ..database import SessionLocal, init_database
+from ..ingest import ingest_document
+from ..schemas import IngestRequest, SearchResult
+from ..services import knowledge_stats, search_knowledge
 
 app = FastAPI(title="NEXORA Knowledge Engine", version="2.0.0")
 
