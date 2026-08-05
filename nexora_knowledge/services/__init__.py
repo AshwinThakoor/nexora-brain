@@ -3,6 +3,29 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 from ..models import KnowledgeChunk, KnowledgeDocument
 from ..schemas import SearchResult
+from .exceptions import (
+    AcademyInputError,
+    AuthenticationRequiredError,
+    AuthorizationDeniedError,
+    ResourceConflictError,
+    ResourceNotFoundError,
+    ResourceValidationError,
+    ServiceError,
+)
+from . import (
+    authorization,
+    chunking_pipeline_service,
+    chunking_service,
+    document_service,
+    grading,
+    ingestion_service,
+    learning,
+    parser_service,
+    parse_result_service,
+    parser_pipeline_service,
+    source_service,
+    storage_service,
+)
 
 def _tokens(query: str) -> list[str]:
     return [t.lower() for t in re.findall(r"[A-Za-z0-9_'-]+", query) if len(t) >= 2]
@@ -44,3 +67,31 @@ def knowledge_stats(db: Session) -> dict:
         .order_by(KnowledgeChunk.category)
     ).all())
     return {"documents": documents, "chunks": chunks, "categories": categories}
+
+
+__all__ = [
+    "ResourceConflictError",
+    "ResourceNotFoundError",
+    "ResourceValidationError",
+    "ServiceError",
+    "AcademyInputError",
+    "AuthenticationRequiredError",
+    "AuthorizationDeniedError",
+    "knowledge_stats",
+    "search_knowledge",
+    "learning",
+    "parser_service",
+    "parser_pipeline_service",
+    "parse_result_service",
+    "authorization",
+    "chunking_pipeline_service",
+    "chunking_service",
+    "document_service",
+    "ingestion_service",
+    "grading",
+    "source_service",
+    "storage_service",
+]
+
+# Rich-knowledge service modules are imported explicitly by callers so the
+# existing lightweight Pack 1 search API retains its current import behavior.

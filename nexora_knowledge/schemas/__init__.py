@@ -1,41 +1,183 @@
-from pathlib import Path
-from pydantic import BaseModel, Field, field_validator
+from . import financial_entities as _financial_entities
+from . import curriculum as _curriculum
+from . import governance as _governance
+from . import knowledge_article as _knowledge_article
+from . import learning as _learning
+from . import grading as _grading
+from .category import CategoryCreate, CategoryResponse, CategoryUpdate
+from .claim import ClaimCreate, ClaimDetail, ClaimResponse, ClaimUpdate
+from .common import (
+    IngestRequest,
+    LICENSES,
+    PaginatedResponse,
+    SearchResult,
+)
+from .concept import ConceptCreate, ConceptDetail, ConceptResponse, ConceptUpdate
+from .evidence import EvidenceCreate, EvidenceResponse, EvidenceUpdate
+from .ingestion import (
+    IngestionAttemptRead,
+    IngestionAuditRead,
+    IngestionCancelRequest,
+    IngestionFailureRequest,
+    IngestionJobCreate,
+    IngestionJobRead,
+    IngestionJobSearch,
+    IngestionJobSummary,
+    IngestionRetryRequest,
+    JobReservationRead,
+    JobReservationRequest,
+    ProcessingNodeCreate,
+    ProcessingNodeRead,
+    ProcessingNodeSearch,
+)
+from .storage import (
+    FileHashRead,
+    StorageProviderRead,
+    StoredFileRead,
+    UploadSessionCreate,
+    UploadSessionRead,
+)
+from .parser import ParserCapabilityRead, ParserValidationResponse
+from .document import (
+    DocumentCreate,
+    DocumentFileCreate,
+    DocumentFileRead,
+    DocumentIdentifierCreate,
+    DocumentIdentifierRead,
+    DocumentRead,
+    DocumentRelationshipCreate,
+    DocumentRelationshipRead,
+    DocumentSearch,
+    DocumentSummary,
+    DocumentUpdate,
+    DocumentVersionCreate,
+    DocumentVersionRead,
+    ImportBatchCreate,
+    ImportBatchRead,
+    ImportBatchSearch,
+)
+from .financial_entities import *
+from .curriculum import *
+from .governance import *
+from .knowledge_article import *
+from .learning import *
+from .grading import *
+from .relationship import (
+    RelationshipCreate,
+    RelationshipResponse,
+    RelationshipUpdate,
+)
+from .source import (
+    LegacySourceCreate,
+    LegacySourceResponse,
+    LegacySourceUpdate,
+    SourceAliasRead,
+    SourceCreate,
+    SourceLicenseRead,
+    SourceOrganizationRead,
+    SourceRead,
+    SourceResponse,
+    SourceSearch,
+    SourceSummary,
+    SourceTagSummary,
+    SourceUpdate,
+    SourceVersionCreate,
+    SourceVersionRead,
+)
+from .tag import TagCreate, TagResponse, TagUpdate
 
-LICENSES = {"UNKNOWN","PUBLIC_DOMAIN","OPEN_LICENSE","OWNED","PRIVATE_REFERENCE","RESTRICTED"}
-
-class IngestRequest(BaseModel):
-    file_path: str
-    title: str | None = None
-    author: str | None = None
-    publisher: str | None = None
-    source_name: str | None = None
-    source_url: str | None = None
-    license_status: str = "UNKNOWN"
-    license_notes: str | None = None
-    commercial_use_allowed: bool = False
-    quality_score: int = Field(default=50, ge=0, le=100)
-
-    @field_validator("license_status")
-    @classmethod
-    def validate_license(cls, value: str) -> str:
-        value = value.upper()
-        if value not in LICENSES:
-            raise ValueError("Invalid license status")
-        return value
-
-    @field_validator("file_path")
-    @classmethod
-    def validate_path(cls, value: str) -> str:
-        path = Path(value)
-        if not path.exists() or not path.is_file():
-            raise ValueError(f"File does not exist: {value}")
-        return str(path)
-
-class SearchResult(BaseModel):
-    chunk_id: int
-    document_id: int
-    document_title: str
-    category: str
-    chunk_index: int
-    content: str
-    score: int
+__all__ = [
+    "CategoryCreate",
+    "CategoryResponse",
+    "CategoryUpdate",
+    "ClaimCreate",
+    "ClaimDetail",
+    "ClaimResponse",
+    "ClaimUpdate",
+    "ConceptCreate",
+    "ConceptDetail",
+    "ConceptResponse",
+    "ConceptUpdate",
+    "EvidenceCreate",
+    "EvidenceResponse",
+    "EvidenceUpdate",
+    "FileHashRead",
+    "DocumentCreate",
+    "DocumentFileCreate",
+    "DocumentFileRead",
+    "DocumentIdentifierCreate",
+    "DocumentIdentifierRead",
+    "DocumentRead",
+    "DocumentRelationshipCreate",
+    "DocumentRelationshipRead",
+    "DocumentSearch",
+    "DocumentSummary",
+    "DocumentUpdate",
+    "DocumentVersionCreate",
+    "DocumentVersionRead",
+    "IngestRequest",
+    "IngestionAttemptRead",
+    "IngestionAuditRead",
+    "IngestionCancelRequest",
+    "IngestionFailureRequest",
+    "IngestionJobCreate",
+    "IngestionJobRead",
+    "IngestionJobSearch",
+    "IngestionJobSummary",
+    "IngestionRetryRequest",
+    "ImportBatchCreate",
+    "ImportBatchRead",
+    "ImportBatchSearch",
+    "LICENSES",
+    "PaginatedResponse",
+    "ParserCapabilityRead",
+    "ParserValidationResponse",
+    "RelationshipCreate",
+    "RelationshipResponse",
+    "RelationshipUpdate",
+    "SearchResult",
+    "SourceCreate",
+    "SourceAliasRead",
+    "SourceLicenseRead",
+    "SourceOrganizationRead",
+    "SourceRead",
+    "SourceResponse",
+    "SourceSearch",
+    "SourceSummary",
+    "SourceTagSummary",
+    "SourceUpdate",
+    "SourceVersionCreate",
+    "SourceVersionRead",
+    "LegacySourceCreate",
+    "LegacySourceResponse",
+    "LegacySourceUpdate",
+    "JobReservationRead",
+    "JobReservationRequest",
+    "ProcessingNodeCreate",
+    "ProcessingNodeRead",
+    "ProcessingNodeSearch",
+    "StorageProviderRead",
+    "StoredFileRead",
+    "TagCreate",
+    "TagResponse",
+    "TagUpdate",
+    "UploadSessionCreate",
+    "UploadSessionRead",
+    *_curriculum.__all__,
+    *_financial_entities.__all__,
+    *_governance.__all__,
+    *_knowledge_article.__all__,
+    *_learning.__all__,
+    *_grading.__all__,
+]
+from .parse_result import (
+    ParseArtifactRead,
+    ParseExecutionRead,
+    ParseHistoryRead,
+    ParseReadinessRead,
+    ParseRequest,
+    ParseResultRead,
+    ParseResultSearch,
+    ParseResultSummary,
+    ReparseRequest,
+)

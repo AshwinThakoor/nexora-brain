@@ -1,7 +1,8 @@
 from __future__ import annotations
 import argparse, json, sys
 from pydantic import ValidationError
-from .database import SessionLocal, init_database
+from .database import SessionLocal
+from .db_management import initialize_development_database
 from .ingest import ingest_document
 from .schemas import IngestRequest, LICENSES
 from .services import knowledge_stats, search_knowledge
@@ -32,7 +33,7 @@ def main() -> int:
     args = build_parser().parse_args()
     try:
         if args.command == "init-db":
-            init_database()
+            initialize_development_database()
             print("Database initialized successfully.")
             return 0
         with SessionLocal() as db:

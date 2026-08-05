@@ -1,8 +1,11 @@
-from sqlalchemy import CheckConstraint, Float, ForeignKey, Integer, String, Text
+from datetime import datetime
+
+from sqlalchemy import CheckConstraint, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..database import Base
 from .common import TimestampMixin
+from .enums import KnowledgeLifecycleStatus
 
 
 class Claim(TimestampMixin, Base):
@@ -33,6 +36,16 @@ class Claim(TimestampMixin, Base):
         nullable=False,
         default="draft",
     )
+    lifecycle_status: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        default=KnowledgeLifecycleStatus.DRAFT.value,
+    )
+    confidence_method: Mapped[str | None] = mapped_column(String(255))
+    confidence_reason: Mapped[str | None] = mapped_column(Text)
+    last_reviewed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
 
     concept: Mapped["Concept"] = relationship(
         "Concept",
@@ -42,6 +55,18 @@ class Claim(TimestampMixin, Base):
         "Evidence",
         back_populates="claim",
         cascade="all, delete-orphan",
+    )
+    conflicts_as_a: Mapped[list["ClaimConflict"]] = relationship(
+        "ClaimConflict",
+        back_populates="claim_a",
+        cascade="all, delete-orphan",
+        foreign_keys="ClaimConflict.claim_a_id",
+    )
+    conflicts_as_b: Mapped[list["ClaimConflict"]] = relationship(
+        "ClaimConflict",
+        back_populates="claim_b",
+        cascade="all, delete-orphan",
+        foreign_keys="ClaimConflict.claim_b_id",
     )
 
     def __repr__(self) -> str:

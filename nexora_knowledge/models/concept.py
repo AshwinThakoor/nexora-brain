@@ -59,6 +59,76 @@ class Concept(TimestampMixin, Base):
         secondary=concept_tags,
         back_populates="concepts",
     )
+    aliases: Mapped[list["ConceptAlias"]] = relationship(
+        "ConceptAlias",
+        back_populates="concept",
+        cascade="all, delete-orphan",
+    )
+    articles: Mapped[list["KnowledgeArticle"]] = relationship(
+        "KnowledgeArticle",
+        back_populates="concept",
+        passive_deletes=True,
+    )
+    lessons: Mapped[list["Lesson"]] = relationship(
+        "Lesson",
+        back_populates="concept",
+        passive_deletes=True,
+    )
+    asset_class: Mapped["AssetClass | None"] = relationship(
+        "AssetClass",
+        back_populates="concept",
+        uselist=False,
+        passive_deletes=True,
+    )
+    instrument: Mapped["Instrument | None"] = relationship(
+        "Instrument",
+        back_populates="concept",
+        uselist=False,
+        passive_deletes=True,
+    )
+    indicator: Mapped["Indicator | None"] = relationship(
+        "Indicator",
+        back_populates="concept",
+        uselist=False,
+        passive_deletes=True,
+    )
+    strategy: Mapped["Strategy | None"] = relationship(
+        "Strategy",
+        back_populates="concept",
+        uselist=False,
+        passive_deletes=True,
+    )
+    pattern: Mapped["Pattern | None"] = relationship(
+        "Pattern",
+        back_populates="concept",
+        uselist=False,
+        passive_deletes=True,
+    )
+    economic_event_type: Mapped["EconomicEventType | None"] = relationship(
+        "EconomicEventType",
+        back_populates="concept",
+        uselist=False,
+        passive_deletes=True,
+    )
+    formulas: Mapped[list["Formula"]] = relationship(
+        "Formula",
+        back_populates="concept",
+        passive_deletes=True,
+    )
+    case_studies: Mapped[list["CaseStudy"]] = relationship(
+        "CaseStudy",
+        back_populates="concept",
+        passive_deletes=True,
+    )
+
+    @property
+    def economic_event_types(self) -> list["EconomicEventType"]:
+        """Plural compatibility view over the concept-unique event type."""
+        return (
+            [self.economic_event_type]
+            if self.economic_event_type is not None
+            else []
+        )
 
     def __repr__(self) -> str:
         return f"Concept(id={self.id!r}, title={self.title!r}, slug={self.slug!r})"

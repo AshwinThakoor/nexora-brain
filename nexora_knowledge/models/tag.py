@@ -29,6 +29,18 @@ class Tag(CreatedAtMixin, Base):
         secondary=concept_tags,
         back_populates="tags",
     )
+    sources: Mapped[list["Source"]] = relationship(
+        "Source",
+        secondary="source_tags",
+        back_populates="tags",
+        order_by="Source.title",
+    )
+    documents: Mapped[list["Document"]] = relationship(
+        "Document",
+        secondary="document_tags",
+        back_populates="tags",
+        order_by="Document.title",
+    )
 
     def __repr__(self) -> str:
         return f"Tag(id={self.id!r}, name={self.name!r}, slug={self.slug!r})"
