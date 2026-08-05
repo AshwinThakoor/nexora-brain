@@ -1,5 +1,5 @@
 alembic==1.16.5
-beautifulsoup4==4.13.4
+beautifulsoup4==4.15.0
 cryptography==45.0.6
 EbookLib==0.19
 fastapi==0.116.1
