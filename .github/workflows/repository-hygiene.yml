@@ -1,0 +1,55 @@
+name: Repository Hygiene
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install YAML validator
+        run: python -m pip install --upgrade pip && python -m pip install pyyaml
+
+      - name: Validate YAML
+        run: |
+          python -c "import pathlib, yaml; [yaml.safe_load(pathlib.Path(p).read_text()) for p in pathlib.Path('.').rglob('*.yml') if '.git' not in p.parts]"
+
+      - name: Validate Markdown links
+        run: |
+          python - <<'PY'
+            import pathlib, re
+            root = pathlib.Path('.')
+            links = re.compile(r'\[[^\]]+\]\(([^)]+)\)')
+            for path in root.rglob('*.md'):
+                text = path.read_text(encoding='utf-8')
+                for match in links.findall(text):
+                    if match.startswith('#') or match.startswith('http'):
+                        continue
+                    target = (path.parent / match).resolve()
+                    if not target.exists():
+                        print(f"Missing link target: {match} in {path}")
+                        raise SystemExit(1)
+          PY
+
+      - name: Check for disallowed artifacts
+        run: |
+          python - <<'PY'
+import pathlib
+exclude = {'.git', '.github'}
+for p in pathlib.Path('.').rglob('*'):
+    if any(part in exclude for part in p.parts):
+        continue
+    if p.is_file() and p.suffix.lower() in {'.pyc', '.db', '.sqlite', '.zip', '.sql'}:
+        print('Disallowed tracked artifact:', p)
+        raise SystemExit(1)
+PY
