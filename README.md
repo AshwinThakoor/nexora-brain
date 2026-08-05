@@ -1,5 +1,8 @@
 # NEXORA Knowledge Engine
 
+This component is part of the NEXORA repository and is intended for research and prototype use only.
+See the root `README.md` for repository-level context and safety guidance.
+
 Pack 1 document ingestion and search plus the Pack 2A Knowledge Graph
 management foundation.
 
