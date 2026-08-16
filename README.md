@@ -1,103 +1,336 @@
+<div align="center">
+
 # NEXORA Brain
 
-![CI](https://img.shields.io/badge/ci-checks-passing-brightgreen)
-![License: All Rights Reserved](https://img.shields.io/badge/license-All%20Rights%20Reserved-red)
-![Python](https://img.shields.io/badge/python-3.11%2B-important)
+### Knowledge Ingestion · Document Intelligence · Knowledge Graph · Deterministic Chunking · FastAPI
 
-NEXORA Brain is a knowledge ingestion and knowledge-graph component. This repository contains the brain service, API, database schema and supporting utilities. The README focuses on features implemented and tested in this export rather than unsupported production claims.
+![Python](https://img.shields.io/badge/Python-3.11%2B-blue)
+![API](https://img.shields.io/badge/API-FastAPI-009688)
+![ORM](https://img.shields.io/badge/ORM-SQLAlchemy-red)
+![Migrations](https://img.shields.io/badge/DB-Alembic-purple)
+![Tests](https://img.shields.io/badge/tests-pytest-success)
+![Status](https://img.shields.io/badge/status-active%20engineering-orange)
+![License](https://img.shields.io/badge/license-All%20Rights%20Reserved-red)
 
-## Highlights
+**Independent backend / AI infrastructure project by Ashwin Thakoor**
 
-- FastAPI-based HTTP API for ingestion, search and knowledge management.
-- SQLAlchemy models and Alembic migrations for database schema management.
-- Source Registry and Document Registry for provenance and source metadata.
-- Secure-storage abstraction for uploaded content and artifacts.
-- Deterministic parsing pipelines for TXT, PDF, DOCX, Markdown and HTML.
-- Persistent ParseResult storage for parsed documents and extracted metadata.
-- Deterministic chunking with provenance metadata for downstream indexing and reasoning.
-- Academy primitives for curriculum, learner progress, assessments, grading and reviews.
-- Pytest test suite covering core services, migrations and API routes.
+*A modular knowledge-processing platform that ingests heterogeneous documents, preserves provenance, chunks content deterministically, stores structured knowledge and exposes it through a typed FastAPI service.*
 
-## Architecture
+</div>
+
+---
+
+## Why this project exists
+
+NEXORA Brain explores the infrastructure required before an application can reliably use documents as machine-readable knowledge.
+
+The core problem is larger than "extract some text from a PDF." A useful knowledge system must answer questions such as:
+
+- Where did this information come from?
+- Can the same document be processed deterministically?
+- How are sources, documents, parse results and chunks related?
+- Can parsed content retain provenance back to its original source?
+- How can structured concepts, claims, evidence and relationships be persisted?
+- How should ingestion failures, retries and storage be modeled?
+- How can these capabilities be exposed cleanly through an API?
+
+NEXORA Brain implements these concerns as separate, testable application layers.
+
+---
+
+## Architecture at a glance
 
 ```mermaid
-graph TD
-    A[Upload / API] --> B[Parsers]
-    B --> C[Deterministic Chunking]
-    C --> D[ParseResult Storage]
-    D --> E[Knowledge Graph / Registries]
-    E --> F[FastAPI API Layer]
-    F --> G[SQLAlchemy + Alembic]
-    H[Secure Storage Provider] --> D
-    F --> I[Academy]
+flowchart LR
+    INPUT[TXT / PDF / DOCX / Markdown / HTML] --> API[FastAPI / Ingestion API]
+    API --> REGISTRY[Source & Document Registry]
+    REGISTRY --> PARSER[Parser Framework]
+    PARSER --> RESULT[Persistent ParseResult]
+    RESULT --> CHUNK[Deterministic Chunking]
+    CHUNK --> KNOWLEDGE[Knowledge Models]
+    KNOWLEDGE --> DB[(SQLAlchemy Database)]
+    DB --> QUERY[API / Services]
+    STORAGE[Secure Storage Abstraction] --> RESULT
 ```
 
-## API
+See [`ARCHITECTURE.md`](ARCHITECTURE.md) for deeper ingestion, persistence, API, authorization and data-model diagrams.
 
-The FastAPI application is exposed through `nexora_knowledge.api`, with OpenAPI/Swagger documentation available at `/docs` when running locally.
+---
 
-Representative route groups include:
+## Engineering highlights
 
-- `/api/v1/ingest` — ingestion orchestration;
-- `/api/v1/documents` — document metadata and ParseResult access;
-- `/api/v1/sources` — source registry management;
-- `/api/v1/knowledge` — knowledge relationships and queries;
-- `/api/v1/academy` — curriculum, progress, assessments and grading.
+| Area | What NEXORA Brain demonstrates |
+|---|---|
+| **Backend architecture** | Layered FastAPI routers, service layer, schemas and persistence models |
+| **Document intelligence** | Structured parsers for TXT, PDF, DOCX, Markdown and HTML |
+| **Data engineering** | Ingestion orchestration, registries, persistent parse results and provenance |
+| **Deterministic processing** | Stable chunking strategies with chunk metadata and reproducible boundaries |
+| **Database design** | SQLAlchemy ORM models + multi-stage Alembic migration history |
+| **Knowledge modeling** | Categories, concepts, claims, evidence, relationships, sources and knowledge articles |
+| **Storage architecture** | Pluggable storage provider abstraction and persisted file metadata |
+| **Authorization** | Provider-neutral role/scope policy layer for protected domain operations |
+| **Testing** | Broad pytest coverage across APIs, services, schemas, parsers, storage and migrations |
+| **Engineering documentation** | ADRs, sprint design notes, API docs, schema docs and architecture documentation |
 
-See `API_DOCUMENTATION.md` for implementation details.
+---
 
-## Parsing, chunking and provenance
+## End-to-end ingestion flow
 
-Supported input formats in this export are TXT, PDF, DOCX, Markdown and HTML. Parsers produce structured results that are persisted and linked to document/source records. Deterministic chunking allows identical inputs to produce stable chunk boundaries and identifiers while retaining provenance metadata.
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant A as FastAPI
+    participant S as Source Registry
+    participant D as Document Registry
+    participant P as Parser Pipeline
+    participant K as Chunking Pipeline
+    participant DB as Database
 
-## Database and migrations
+    C->>A: Submit document / ingestion request
+    A->>S: Resolve or register source
+    A->>D: Create / resolve document
+    A->>P: Parse document content
+    P-->>A: Structured ParseResult + metadata
+    A->>DB: Persist parse result
+    A->>K: Produce deterministic chunks
+    K->>DB: Persist chunks + provenance
+    A-->>C: Structured ingestion response
+```
 
-SQLAlchemy is used for relational persistence and Alembic manages schema migrations. Migration scripts are maintained under `alembic/versions`.
+---
 
-## Testing
+## Main application layers
 
-Tests use `pytest` under `tests/`. A typical local workflow is:
+### API layer — `nexora_knowledge/api/`
+
+FastAPI routers expose domain operations for ingestion, document/source registries, parsers, parse results, chunks, knowledge entities, storage and the optional Academy domain.
+
+The application entry point is:
 
 ```bash
-python -m pip install -r requirements-dev.txt
-python -m alembic upgrade head
-python -m pytest
+uvicorn nexora_knowledge.api:app --reload
 ```
+
+### Service layer — `nexora_knowledge/services/`
+
+Business rules and persistence operations are separated from HTTP routing. Larger services cover ingestion, documents, chunking, parser execution, storage, curriculum/learning, grading and knowledge entities.
+
+### Models — `nexora_knowledge/models/`
+
+SQLAlchemy models represent the persistent domain. The schema includes source/document registries, ingestion state, parse results, chunks, structured knowledge entities and optional learning/Academy models.
+
+### Schemas — `nexora_knowledge/schemas/`
+
+Pydantic schemas provide validation and API contracts independently from the ORM models.
+
+### Parsers — `nexora_knowledge/parsers/`
+
+The parser framework includes verified implementations for:
+
+`TXT` · `PDF` · `DOCX` · `Markdown` · `HTML`
+
+Parser registry and base abstractions allow document-specific parsing logic to remain modular.
+
+### Chunking — `nexora_knowledge/chunking/`
+
+The chunking subsystem contains typed models, registry infrastructure, fixed-window and structural strategies, helper utilities and persistence-oriented services.
+
+### Knowledge builder — `nexora_knowledge/knowledge_builder/`
+
+Builder components transform extracted material into richer structured entities such as sources, categories, concepts, claims, relationships and tags.
+
+---
+
+## Persistence architecture
+
+```mermaid
+flowchart TD
+    SOURCE[Source] --> DOCUMENT[Document]
+    DOCUMENT --> INGESTION[Ingestion / Processing State]
+    DOCUMENT --> PARSE[Parse Result]
+    PARSE --> CHUNKSET[Chunk Set]
+    CHUNKSET --> CHUNKS[Chunks]
+    CHUNKS --> PROVENANCE[Offsets / Metadata / Provenance]
+
+    SOURCE --> CONCEPT[Concepts / Knowledge]
+    CONCEPT --> CLAIM[Claims]
+    CLAIM --> EVIDENCE[Evidence]
+    CONCEPT --> REL[Relationships]
+```
+
+Schema evolution is managed through Alembic rather than relying on implicit table creation at application startup.
+
+---
+
+## Database migration history
+
+The repository contains a real multi-stage migration history covering:
+
+- initial schema foundation;
+- richer knowledge entities;
+- Academy curriculum;
+- learner engine;
+- grading workflows;
+- source registry;
+- document registry;
+- ingestion orchestration;
+- secure-storage metadata;
+- persistent parser results;
+- deterministic chunking.
+
+This provides recruiters with concrete evidence of schema evolution rather than a single static SQLite prototype.
+
+See [`DATABASE_SCHEMA.md`](DATABASE_SCHEMA.md).
+
+---
+
+## API surface
+
+The FastAPI application registers separate routers rather than placing every route in one monolithic file. Major groups include:
+
+- health / legacy compatibility;
+- categories, concepts, claims, evidence, relationships and tags;
+- sources and source registry;
+- document registry and import batches;
+- ingestion and processing nodes;
+- storage and stored files;
+- parser controls;
+- parse results and parse history;
+- chunk sets / chunk metadata;
+- Academy catalog, learning, grading and administration.
+
+Run the service and use `/docs` for the generated OpenAPI interface. See [`API_DOCUMENTATION.md`](API_DOCUMENTATION.md) for the repository-level map.
+
+---
+
+## Authorization model
+
+NEXORA Brain includes a **provider-neutral authorization policy layer**. Roles such as learner, instructor, reviewer and admin are modeled in application services, with resource-specific role gates and course/ownership scope checks.
+
+```mermaid
+flowchart LR
+    IDP[External Authentication / Identity Provider] --> PRINCIPAL[Principal Claims]
+    PRINCIPAL --> POLICY[Authorization Policy]
+    POLICY -->|allowed| SERVICE[Domain Service]
+    POLICY -->|denied| ERROR[401 / 403]
+```
+
+Important: this repository models authorization policies, but production authentication still requires integration with a real upstream identity provider or gateway. It should not be described as a complete production authentication system.
+
+---
+
+## Testing depth
+
+The `tests/` directory covers substantially more than a basic smoke test. It includes tests for:
+
+- core functionality;
+- parser framework and structured parsers;
+- deterministic chunking;
+- source/document registries;
+- ingestion orchestration;
+- persistent parse results;
+- secure storage;
+- knowledge-graph models/services/API;
+- Academy curriculum, learning and grading;
+- SQLAlchemy/Alembic migration compatibility.
+
+```mermaid
+flowchart LR
+    CODE[Application Code] --> UNIT[Service / Schema Tests]
+    CODE --> API[API Tests]
+    CODE --> DB[Migration Tests]
+    CODE --> PARSER[Parser Tests]
+    CODE --> STORE[Storage Tests]
+    UNIT --> CI[GitHub Actions]
+    API --> CI
+    DB --> CI
+    PARSER --> CI
+    STORE --> CI
+```
+
+---
 
 ## Quick start
 
 ```bash
 python -m venv .venv
-# activate the virtual environment for your platform
+# Activate .venv for your platform
+python -m pip install --upgrade pip
 python -m pip install -r requirements-dev.txt
-# copy .env.example to .env and configure local values
+
+# Copy the safe example configuration
+cp .env.example .env
+
+# Apply database migrations
 python -m alembic upgrade head
+
+# Run tests
+python -m pytest
+
+# Start the API
 uvicorn nexora_knowledge.api:app --reload
 ```
 
-## Security
+On Windows PowerShell, use `Copy-Item .env.example .env` instead of `cp`.
 
-Credentials and secrets should never be committed. Configuration is environment-driven and storage/database access should be restricted appropriately. See `SECURITY.md` and `CONFIGURATION.md`.
+---
 
-## Status
+## Configuration
 
-This is a component-focused engineering project and research platform. Deployment-specific hardening such as TLS, external identity, secrets rotation and production storage configuration remains environment-dependent.
+Configuration is environment-driven through `pydantic-settings`. The example configuration covers database location, chunking strategy, ingestion retry limits, file-size/type restrictions and local storage settings.
+
+No real credentials are included in `.env.example`.
+
+See [`CONFIGURATION.md`](CONFIGURATION.md).
+
+---
+
+## Recruiter review — recommended path
+
+1. **README.md** — project purpose and system overview.
+2. **ARCHITECTURE.md** — architecture and data-flow design.
+3. `nexora_knowledge/services/ingestion_service.py` — substantial service-layer engineering.
+4. `nexora_knowledge/services/chunking_pipeline_service.py` — deterministic-processing workflow.
+5. `nexora_knowledge/parsers/markdown.py` or `docx.py` — real document-parser implementation.
+6. `nexora_knowledge/models/document.py` / `chunk.py` — ORM/data-model depth.
+7. `tests/test_ingestion_orchestration.py` and `tests/test_chunking_sprint_1g.py` — verification depth.
+8. **DATABASE_SCHEMA.md** — schema evolution and migrations.
+
+---
+
+## What this project does **not** claim
+
+NEXORA Brain is not presented as a finished commercial RAG platform, autonomous AI agent or production SaaS deployment. The repository currently demonstrates the infrastructure **underneath** those kinds of systems: ingestion, parsing, structured storage, provenance, knowledge modeling, APIs and deterministic chunking.
+
+A vector database, embedding/retrieval stack and LLM answer-generation layer can be added later, but they should not be claimed as implemented until they actually exist in the codebase.
+
+---
+
+## Documentation
+
+| Document | Purpose |
+|---|---|
+| [`PROJECT_CONTEXT.md`](PROJECT_CONTEXT.md) | Product problem, architecture intent and engineering decisions |
+| [`ARCHITECTURE.md`](ARCHITECTURE.md) | Detailed diagrams and component relationships |
+| [`PROJECT_STRUCTURE.md`](PROJECT_STRUCTURE.md) | Repository map and recruiter reading guide |
+| [`API_DOCUMENTATION.md`](API_DOCUMENTATION.md) | API/router organization |
+| [`DATABASE_SCHEMA.md`](DATABASE_SCHEMA.md) | Persistence model and migration evolution |
+| [`CONFIGURATION.md`](CONFIGURATION.md) | Environment/configuration model |
+| [`TESTING.md`](TESTING.md) | Testing strategy and coverage map |
+| [`SECURITY.md`](SECURITY.md) | Security assumptions and reporting guidance |
+| [`ROADMAP.md`](ROADMAP.md) | Next engineering milestones |
+
+---
 
 ## License
 
 **Copyright 2026 NEXORA / Ashwin Thakoor. All Rights Reserved.**
 
-No portion of the source code, documentation or assets may be copied, distributed or modified without prior written permission. See `LICENSE` for the repository terms.
+This repository is publicly visible for technical and portfolio review. Public visibility does not grant permission to copy, redistribute or modify its source, documentation or assets. See [`LICENSE`](LICENSE).
 
-## Documentation
+<div align="center">
 
-- `API_DOCUMENTATION.md`
-- `ARCHITECTURE.md`
-- `CONFIGURATION.md`
-- `DATABASE_SCHEMA.md`
-- `INSTALLATION.md`
-- `PROJECT_STRUCTURE.md`
-- `SECURITY.md`
-- `TESTING.md`
+### NEXORA Brain
+**Backend Engineering × Document Intelligence × Data Architecture × AI Infrastructure**
 
-**Author: Ashwin Thakoor**
+</div>
