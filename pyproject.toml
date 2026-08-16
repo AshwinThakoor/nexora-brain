@@ -1,6 +1,7 @@
 [project]
-name = "nexora-brain-pack1"
+name = "nexora-brain"
 version = "2.0.0"
+description = "Document intelligence and knowledge infrastructure engine built with FastAPI and SQLAlchemy."
 requires-python = ">=3.11"
 
 [tool.pytest.ini_options]
