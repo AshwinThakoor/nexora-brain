@@ -2,7 +2,7 @@ alembic==1.16.5
 beautifulsoup4==4.13.4
 cryptography==45.0.6
 EbookLib==0.19
-fastapi==0.116.1
+fastapi==0.141.1
 lxml==6.0.2
 markdown-it-py==4.0.0
 pydantic==2.11.7
