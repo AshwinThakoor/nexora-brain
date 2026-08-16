@@ -1,124 +1,166 @@
-# NEXORA Brain Pack 1 v2 - Project Structure
+# NEXORA Brain — Project Structure
 
-## Folder structure
+This document maps the current repository rather than the much smaller early Pack 1 layout.
 
-The tree below is limited to the application's meaningful first two to three
-levels. Generated `__pycache__/` directories and the contents of `.venv/` are
-omitted.
+## Repository map
 
 ```text
-NEXORA_Brain_Pack1_v2/
-|-- .venv/                         # Local Python virtual environment
-|-- knowledge_sources/
-|   `-- raw/
-|       `-- test_trading.txt       # Sample source document
-|-- nexora_knowledge/
-|   |-- api/
-|   |   `-- __init__.py            # FastAPI app and route handlers
-|   |-- models/
-|   |   `-- __init__.py            # SQLAlchemy ORM models
-|   |-- schemas/
-|   |   `-- __init__.py            # Pydantic request/response schemas
-|   |-- services/
-|   |   `-- __init__.py            # Search and statistics services
-|   |-- __init__.py
-|   |-- chunker.py                  # Splits cleaned text into chunks
-|   |-- classifier.py               # Rule-based content classification
-|   |-- cleaner.py                  # Text normalization
-|   |-- cli.py                      # Command-line entry point
-|   |-- config.py                   # Environment-backed settings
-|   |-- database.py                 # SQLAlchemy base, engine, and session factory
-|   |-- ingest.py                   # Document ingestion workflow
-|   `-- parsers.py                  # TXT, Markdown, PDF, and EPUB parsing
-|-- tests/
-|   |-- conftest.py                 # Pytest database fixture
-|   `-- test_core.py                # Core unit/integration tests
-|-- .env                            # Local environment configuration
-|-- .env.example                    # Example environment configuration
-|-- pyproject.toml                  # Project metadata and pytest configuration
-|-- README.md                       # Setup and usage instructions
-`-- requirements.txt                # Pinned Python dependencies
+nexora-brain/
+├── .github/
+│   ├── workflows/                 # Tests, CI and repository hygiene
+│   ├── ISSUE_TEMPLATE/
+│   ├── CODEOWNERS
+│   └── dependabot.yml
+│
+├── alembic/
+│   ├── env.py
+│   └── versions/                  # Versioned schema evolution
+│
+├── docs/
+│   ├── adr/                       # Architecture Decision Records
+│   ├── media/                     # Portfolio media planning/assets
+│   └── PACK_*                     # Historical sprint implementation notes
+│
+├── knowledge_sources/
+│   └── raw/                       # Small sample ingestion input
+│
+├── nexora_knowledge/
+│   ├── api/                       # FastAPI application + routers
+│   ├── chunking/                  # Deterministic chunk strategies/models
+│   ├── knowledge_builder/         # Structured knowledge builders
+│   ├── models/                    # SQLAlchemy ORM models
+│   ├── parsers/                   # TXT/PDF/DOCX/Markdown/HTML parsers
+│   ├── schemas/                   # Pydantic contracts
+│   ├── seeds/                     # Development/sample seed data
+│   ├── services/                  # Domain/business services
+│   ├── storage/                   # Storage provider abstractions
+│   ├── cli.py
+│   ├── config.py
+│   ├── database.py
+│   └── ingest.py
+│
+├── tests/                         # API/service/parser/storage/migration tests
+├── .env.example
+├── pyproject.toml
+├── requirements.txt
+├── requirements-dev.txt
+├── README.md
+├── PROJECT_CONTEXT.md
+├── ARCHITECTURE.md
+├── API_DOCUMENTATION.md
+├── DATABASE_SCHEMA.md
+└── ... supporting engineering documentation
 ```
 
-## Application and database locations
+## API layer
 
-### FastAPI application start
+`nexora_knowledge/api/` is now a modular router package. The central `__init__.py` creates the FastAPI application, installs exception handlers and registers domain routers.
 
-The ASGI application object is created as `app` in
-`nexora_knowledge/api/__init__.py`:
+Notable router areas include Academy administration/catalog/learning/grading, categories, concepts, chunks, claims, document registry, evidence, ingestion, parse results, parsers, relationships, sources/source registry, storage and tags.
 
-```python
-app = FastAPI(title="NEXORA Knowledge Engine", version="2.0.0")
+## Service layer
+
+`nexora_knowledge/services/` contains the business layer. Recruiters looking for substantial implementation should inspect:
+
+- `ingestion_service.py`
+- `chunking_pipeline_service.py`
+- `chunking_service.py`
+- `document_service.py`
+- `parse_result_service.py`
+- `parser_pipeline_service.py`
+- `storage_service.py`
+- `authorization.py`
+- `curriculum.py`
+- `learning.py`
+- `grading.py`
+
+This separation keeps HTTP routing from becoming the business-logic layer.
+
+## Parser framework
+
+`nexora_knowledge/parsers/` contains shared parser infrastructure and format-specific implementations for TXT, PDF, DOCX, Markdown and HTML.
+
+Several parser files are substantial implementations, providing strong evidence of real document-processing work rather than placeholder interfaces.
+
+## Chunking subsystem
+
+`nexora_knowledge/chunking/` includes base abstractions, typed models, a strategy registry, fixed-window chunking, structural chunking and shared helpers. Service-layer orchestration persists chunk results and provenance.
+
+## Persistence models
+
+`nexora_knowledge/models/` contains SQLAlchemy models across multiple domains:
+
+- documents and canonical documents;
+- chunks;
+- ingestion;
+- parse results;
+- sources and storage;
+- categories/concepts/claims/evidence/relationships;
+- knowledge articles;
+- governance;
+- financial entities;
+- curriculum, learning and grading.
+
+## API schemas
+
+`nexora_knowledge/schemas/` mirrors domain boundaries with Pydantic request/response contracts. ORM entities and API contracts are deliberately separate.
+
+## Knowledge builder
+
+`nexora_knowledge/knowledge_builder/` contains builders for categories, concepts, claims, relationships, sources and tags plus extraction/import pipeline utilities.
+
+## Storage
+
+`nexora_knowledge/storage/` defines storage-provider abstractions. The current configuration supports a local provider while keeping the service boundary suitable for future provider implementations.
+
+## Database migrations
+
+`alembic/versions/` demonstrates the evolution from the initial schema through richer knowledge modeling, Academy functionality, registries, ingestion orchestration, secure storage, persistent parser results and deterministic chunking.
+
+This is particularly valuable portfolio evidence because it shows iterative schema design rather than a database created once from the final ORM state.
+
+## Tests
+
+`tests/` contains broad automated coverage across core behavior, APIs, services, schemas, parser behavior, storage and migrations. Important examples include:
+
+- `test_ingestion_orchestration.py`
+- `test_document_registry.py`
+- `test_source_registry.py`
+- `test_persistent_parser_results.py`
+- `test_structured_parsers.py`
+- `test_chunking_sprint_1g.py`
+- `test_secure_storage.py`
+- `test_knowledge_graph_api.py`
+- `test_learning_services.py`
+- `test_academy_grading.py`
+
+## Documentation
+
+`docs/PACK_*` files are historical sprint/implementation records. `docs/adr/` contains Architecture Decision Records. Root-level documentation is the polished portfolio/recruiter surface.
+
+## Recruiter reading path
+
+```mermaid
+flowchart LR
+    README[README] --> ARCH[ARCHITECTURE]
+    ARCH --> SERVICE[Ingestion / Chunking Service]
+    SERVICE --> PARSER[Parser Implementation]
+    PARSER --> MODEL[ORM Models]
+    MODEL --> TEST[Test Suite]
+    TEST --> MIG[Alembic Migrations]
 ```
 
-The documented development command starts it with:
+Recommended files:
 
-```powershell
-uvicorn nexora_knowledge.api:app --reload
-```
+1. `README.md`
+2. `ARCHITECTURE.md`
+3. `nexora_knowledge/services/ingestion_service.py`
+4. `nexora_knowledge/services/chunking_pipeline_service.py`
+5. `nexora_knowledge/parsers/markdown.py`
+6. `nexora_knowledge/models/document.py`
+7. `tests/test_ingestion_orchestration.py`
+8. `alembic/versions/3a_s6_001_add_deterministic_chunking.py`
 
-The same module also registers a startup handler that calls
-`init_database()` to create the database tables.
+## Why the repository is useful as portfolio evidence
 
-### SQLAlchemy models
-
-The ORM models are defined in `nexora_knowledge/models/__init__.py`:
-
-- `KnowledgeDocument`
-- `KnowledgeChunk`
-
-Their shared declarative base, `Base`, is defined in
-`nexora_knowledge/database.py`.
-
-### Database session
-
-`nexora_knowledge/database.py` creates the SQLAlchemy `engine` and the
-`SessionLocal` session factory at module load time.
-
-For API requests, `nexora_knowledge/api/__init__.py` creates a session by
-calling `SessionLocal()` inside the `get_db()` dependency and closes it after
-the request. The CLI also opens sessions from `SessionLocal` in
-`nexora_knowledge/cli.py`.
-
-### API routes
-
-All API routes are declared directly in `nexora_knowledge/api/__init__.py`:
-
-- `GET /health`
-- `POST /ingest`
-- `GET /search`
-- `GET /stats`
-
-There are no separate router modules or `APIRouter` instances in the current
-project.
-
-### Tests
-
-Tests are located in `tests/`:
-
-- `tests/conftest.py` provides an in-memory SQLite session fixture.
-- `tests/test_core.py` tests cleaning, chunking, classification, ingestion,
-  duplicate protection, search, and statistics.
-
-Pytest is configured in `pyproject.toml` to use `tests/` as its test path.
-
-## Major folder descriptions
-
-- `.venv/` - Generated local Python environment containing installed
-  dependencies and command-line executables; it is not application source.
-- `knowledge_sources/` - Input documents intended for ingestion into the
-  knowledge database. Its `raw/` subfolder currently contains a sample trading
-  document.
-- `nexora_knowledge/` - Main Python package. It contains configuration,
-  persistence, parsing, cleaning, chunking, classification, ingestion, search,
-  API, and CLI functionality.
-- `nexora_knowledge/api/` - FastAPI application object, lifecycle hook,
-  database dependency, and HTTP route handlers.
-- `nexora_knowledge/models/` - SQLAlchemy mappings for stored documents and
-  their text chunks.
-- `nexora_knowledge/schemas/` - Pydantic request validation and API response
-  data structures.
-- `nexora_knowledge/services/` - Database-backed search and knowledge-statistics
-  operations shared by the API and CLI.
-- `tests/` - Pytest fixtures and automated coverage of the core knowledge
-  processing and persistence workflow.
+Unlike the sanitized NEXORA Trading Engine showcase, Brain can expose considerably more implementation because the core backend/document-processing architecture is itself useful recruiter evidence and does not reveal the private trading strategy. Its strongest signals are code volume, modularity, schema evolution, deterministic processing, testing and documentation.
