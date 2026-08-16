@@ -1,164 +1,103 @@
-﻿# NEXORA Brain
+# NEXORA Brain
 
 ![CI](https://img.shields.io/badge/ci-checks-passing-brightgreen)
-![License: MIT](https://img.shields.io/badge/license-MIT-blue)
+![License: All Rights Reserved](https://img.shields.io/badge/license-All%20Rights%20Reserved-red)
 ![Python](https://img.shields.io/badge/python-3.11%2B-important)
 
-NEXORA Brain is a knowledge ingestion and knowledge-graph component. This repository contains the brain service, API, database schema and supporting utilities. The README focuses on the features that are implemented and tested in this export; unsupported or unverified claims (for example EPUB support or "production-ready") have been removed.
+NEXORA Brain is a knowledge ingestion and knowledge-graph component. This repository contains the brain service, API, database schema and supporting utilities. The README focuses on features implemented and tested in this export rather than unsupported production claims.
 
 ## Highlights
 
 - FastAPI-based HTTP API for ingestion, search and knowledge management.
-- SQLAlchemy models and Alembic migrations manage the database schema.
-- Source Registry and Document Registry to track document provenance and source metadata.
-- Secure storage abstraction (pluggable providers) for uploaded content and artifacts.
-- Ingestion orchestration: deterministic parsing pipelines for TXT, PDF, DOCX, Markdown and HTML inputs.
+- SQLAlchemy models and Alembic migrations for database schema management.
+- Source Registry and Document Registry for provenance and source metadata.
+- Secure-storage abstraction for uploaded content and artifacts.
+- Deterministic parsing pipelines for TXT, PDF, DOCX, Markdown and HTML.
 - Persistent ParseResult storage for parsed documents and extracted metadata.
 - Deterministic chunking with provenance metadata for downstream indexing and reasoning.
-- Academy: curriculum, learner progress, assessments, grading and review primitives.
-- Test suite covering core services, migrations and API routes.
+- Academy primitives for curriculum, learner progress, assessments, grading and reviews.
+- Pytest test suite covering core services, migrations and API routes.
 
 ## Architecture
 
 ```mermaid
 graph TD
-	subgraph Ingestion
-		A[Upload/API] --> B[Parsers: TXT, PDF, DOCX, Markdown, HTML]
-		B --> C[Deterministic Chunking]
-	end
-	C --> D[Persistent ParseResult Storage]
-	D --> E[Knowledge Graph (Source & Document Registry)]
-	E --> F[FastAPI API Layer]
-	F --> G[SQLAlchemy + Alembic (Relational DB)]
-	H[Secure Storage Provider] --> D
-	F --> I[Academy: curriculum & grading]
-	style A fill:#f9f,stroke:#333,stroke-width:1px
+    A[Upload / API] --> B[Parsers]
+    B --> C[Deterministic Chunking]
+    C --> D[ParseResult Storage]
+    D --> E[Knowledge Graph / Registries]
+    E --> F[FastAPI API Layer]
+    F --> G[SQLAlchemy + Alembic]
+    H[Secure Storage Provider] --> D
+    F --> I[Academy]
 ```
 
 ## API
 
-- FastAPI app is exposed via `nexora_knowledge.api`.
-- OpenAPI / Swagger UI: `/docs`
-- ReDoc: `/redoc`
+The FastAPI application is exposed through `nexora_knowledge.api`, with OpenAPI/Swagger documentation available at `/docs` when running locally.
 
-Key route groups (examples):
+Representative route groups include:
 
-- `/api/v1/ingest` — document upload and ingestion orchestration.
-- `/api/v1/documents` — document registry access, metadata and ParseResult retrieval.
-- `/api/v1/sources` — source registry management.
-- `/api/v1/knowledge` — knowledge graph endpoints (queries, relationships).
-- `/api/v1/academy` — curriculum, learner progress, assessments and grading endpoints.
+- `/api/v1/ingest` — ingestion orchestration;
+- `/api/v1/documents` — document metadata and ParseResult access;
+- `/api/v1/sources` — source registry management;
+- `/api/v1/knowledge` — knowledge relationships and queries;
+- `/api/v1/academy` — curriculum, progress, assessments and grading.
 
-See `API_DOCUMENTATION.md` for a full route listing.
+See `API_DOCUMENTATION.md` for implementation details.
 
-## Authentication & Authorization
+## Parsing, chunking and provenance
 
-- The API includes authorization hooks (dependency-injected guards) for protected endpoints. Review the security configuration in `CONFIGURATION.md` and the FastAPI dependency providers to enable OAuth2 / API-key based auth for your deployment.
+Supported input formats in this export are TXT, PDF, DOCX, Markdown and HTML. Parsers produce structured results that are persisted and linked to document/source records. Deterministic chunking allows identical inputs to produce stable chunk boundaries and identifiers while retaining provenance metadata.
 
-## Parsing & Ingestion
+## Database and migrations
 
-- Supported input formats (verified): TXT, PDF, DOCX, Markdown and HTML.
-- Parsers produce a `ParseResult` object which is stored persistently and linked to the Document Registry entry.
-- Ingestion orchestration coordinates parsing, deterministic chunking, metadata extraction and storage.
-
-## Deterministic Chunking and Provenance
-
-- Chunking is deterministic: identical inputs produce identical chunk boundaries and chunk IDs.
-- Each chunk carries provenance metadata linking it back to the source document, parser version and ingestion event.
-
-## Storage and Registries
-
-- Source Registry: canonicalizes and tracks upstream sources (URLs, providers, uploads).
-- Document Registry: tracks ingested document records and links to ParseResults.
-- Secure Storage: an abstraction layer for provider-backed secure storage; backends are configured via `CONFIGURATION.md`.
-
-## Academy (Learning & Grading)
-
-- Curriculum and learner-tracking primitives exist to model courses, lessons and assessments.
-- Learner progress, assessment results and grading flows are available through API endpoints; see `PROJECT_STRUCTURE.md` and `API_DOCUMENTATION.md` for implementation details.
-
-## Database & Migrations
-
-- SQLAlchemy is the ORM used across models.
-- Alembic manages migrations; migration scripts live in `alembic/versions`.
-
-Common Alembic commands (quick reference):
-
-```powershell
-python -m alembic upgrade head
-python -m alembic current
-python -m alembic heads
-```
+SQLAlchemy is used for relational persistence and Alembic manages schema migrations. Migration scripts are maintained under `alembic/versions`.
 
 ## Testing
 
-- Tests are implemented with `pytest` under `tests/`.
-- Recommended: create a virtual environment, install `requirements-dev.txt` and run `python -m pytest`.
+Tests use `pytest` under `tests/`. A typical local workflow is:
+
+```bash
+python -m pip install -r requirements-dev.txt
+python -m alembic upgrade head
+python -m pytest
+```
 
 ## Quick start
 
-Windows (PowerShell):
-
-```powershell
-py -3 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -r requirements-dev.txt
-Copy-Item .env.example .env
-python -m alembic upgrade head
-python -m pytest
-uvicorn nexora_knowledge.api:app --reload
-```
-
-Linux / macOS:
-
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
+python -m venv .venv
+# activate the virtual environment for your platform
 python -m pip install -r requirements-dev.txt
-cp .env.example .env
+# copy .env.example to .env and configure local values
 python -m alembic upgrade head
-python -m pytest
 uvicorn nexora_knowledge.api:app --reload
 ```
-
-Swagger UI: `http://127.0.0.1:8000/docs`
-ReDoc: `http://127.0.0.1:8000/redoc`
-
-## Configuration
-
-Configuration is environment-driven. Copy `.env.example` to `.env` and update `DATABASE_URL`, storage provider keys and auth settings. See `CONFIGURATION.md` for all supported variables.
-
-## Known limitations
-
-- EPUB support and other unverified features were removed from this README: only formats explicitly handled in parsers are documented here (TXT, PDF, DOCX, Markdown, HTML).
-- This export is a component-focused package and may require configuration for production deployments (storage backends, secret management, TLS, authentication).
-
-## Roadmap
-
-- Improve parser coverage and performance profiling.
-- Add pluggable ML-backed document classifiers as an optional component.
-- Harden production operational guidance (secrets, rotation, SSO integration).
 
 ## Security
 
-- Do not commit secrets. Use environment variables or a secret manager for credentials.
-- Restrict access to storage backends and database instances.
-- Review `SECURITY.md` for responsible disclosure and known vulnerabilities.
+Credentials and secrets should never be committed. Configuration is environment-driven and storage/database access should be restricted appropriately. See `SECURITY.md` and `CONFIGURATION.md`.
+
+## Status
+
+This is a component-focused engineering project and research platform. Deployment-specific hardening such as TLS, external identity, secrets rotation and production storage configuration remains environment-dependent.
 
 ## License
 
-This repository is released under the MIT License.
+**Copyright 2026 NEXORA / Ashwin Thakoor. All Rights Reserved.**
 
-Author: Ashwin Thakoor
+No portion of the source code, documentation or assets may be copied, distributed or modified without prior written permission. See `LICENSE` for the repository terms.
 
-## Documentation links
+## Documentation
 
 - `API_DOCUMENTATION.md`
+- `ARCHITECTURE.md`
 - `CONFIGURATION.md`
-- `INSTALLATION.md`
-- `TESTING.md`
 - `DATABASE_SCHEMA.md`
+- `INSTALLATION.md`
+- `PROJECT_STRUCTURE.md`
+- `SECURITY.md`
+- `TESTING.md`
 
----
+**Author: Ashwin Thakoor**
